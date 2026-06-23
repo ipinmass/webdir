@@ -120,7 +120,7 @@ def view(filepath):
         abort(403)
     if not file_path.exists():
         abort(404)
-    return send_from_directory(file_path.parent, file_path.name)
+    return send_from_directory(file_path.parent, file_path.name, max_age=86400 * 7)
 
 
 @app.route("/delete", methods=["POST"])
