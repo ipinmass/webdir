@@ -25,6 +25,8 @@
         .btn-sm { padding: 4px 10px; font-size: 12px; }
         .file-list { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
         .file-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; }
+        .file-num { width: 40px; font-size: 13px; color: #999; text-align: center; flex-shrink: 0; }
+        .file-date { width: 150px; font-size: 12px; color: #999; flex-shrink: 0; }
         .file-item:last-child { border-bottom: none; }
         .file-item:hover { background: #fafafa; }
         .file-icon { width: 32px; height: 32px; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
@@ -100,6 +102,7 @@
             {% if items %}
                 {% for item in items %}
                 <div class="file-item">
+                    <div class="file-num">{{ item.num }}</div>
                     <div class="file-icon">
                         {% if item.is_dir %}&#128193;
                         {% elif item.is_image %}&#127912;
@@ -127,6 +130,7 @@
                             {% if item.is_dir %}Folder{% else %}{{ item.size | filesizeformat }}{% endif %}
                         </div>
                     </div>
+                    <div class="file-date">{{ item.mtime | timestampformat }}</div>
                     <div class="file-actions">
                         {% if not item.is_parent %}
                             <button class="btn btn-sm" onclick="toggleRename({{ loop.index }}, true)">Rename</button>

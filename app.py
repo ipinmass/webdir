@@ -2,6 +2,7 @@ import os
 import secrets
 from pathlib import Path
 from functools import wraps
+from datetime import datetime
 
 from dotenv import load_dotenv
 from flask import (
@@ -14,6 +15,11 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+
+
+@app.template_filter("timestampformat")
+def timestampformat(value):
+    return datetime.fromtimestamp(value).strftime("%Y-%m-%d %H:%M:%S")
 
 STORAGE_DIR = Path(__file__).parent / "storage"
 STORAGE_DIR.mkdir(exist_ok=True)
@@ -71,12 +77,15 @@ def index():
             "path": str(Path(rel_path).parent) if rel_path else "",
         })
 
-    for entry in sorted(current_dir.iterdir(), key=lambda e: (not e.is_dir(), e.name.lower())):
+    for idx, entry in enumerate(sorted(current_dir.iterdir(), key=lambda e: (not e.is_dir(), e.name.lower())), start=1):
+        stat = entry.stat()
         items.append({
             "name": entry.name,
             "is_dir": entry.is_dir(),
             "is_image": entry.suffix.lower() in IMAGE_EXTS,
-            "size": entry.stat().st_size if entry.is_file() else None,
+            "size": stat.st_size if entry.is_file() else None,
+            "mtime": stat.st_mtime,
+            "num": idx,
             "path": str(Path(rel_path) / entry.name) if rel_path else entry.name,
         })
 
