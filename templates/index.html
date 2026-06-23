@@ -130,7 +130,7 @@
                             {% if item.is_dir %}Folder{% else %}{{ item.size | filesizeformat }}{% endif %}
                         </div>
                     </div>
-                    <div class="file-date">{{ item.mtime | timestampformat }}</div>
+                    <div class="file-date">{% if item.mtime %}{{ item.mtime | timestampformat }}{% endif %}</div>
                     <div class="file-actions">
                         {% if not item.is_parent %}
                             <button class="btn btn-sm" onclick="toggleRename({{ loop.index }}, true)">Rename</button>

@@ -74,6 +74,8 @@ def index():
             "name": "..",
             "is_dir": True,
             "is_parent": True,
+            "num": "",
+            "mtime": 0,
             "path": str(Path(rel_path).parent) if rel_path else "",
         })
 
