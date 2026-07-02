@@ -7,7 +7,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    send_from_directory, abort, session, flash
+    send_from_directory, abort, session, flash, jsonify
 )
 from werkzeug.utils import secure_filename
 
@@ -92,6 +92,25 @@ def index():
         })
 
     return render_template("index.html", items=items, current_path=rel_path)
+
+
+@app.route("/api/files")
+@login_required
+def api_files():
+    rel_path = request.args.get("path", "")
+    current_dir = (STORAGE_DIR / rel_path).resolve()
+
+    if not str(current_dir).startswith(str(STORAGE_DIR.resolve())):
+        abort(403)
+    if not current_dir.exists() or not current_dir.is_dir():
+        abort(404)
+
+    files = []
+    for entry in sorted(current_dir.rglob("*"), key=lambda e: e.name.lower()):
+        if entry.is_file():
+            files.append(str(Path(rel_path) / entry.relative_to(current_dir)) if rel_path else str(entry.relative_to(STORAGE_DIR)))
+
+    return jsonify(files)
 
 
 @app.route("/upload", methods=["POST"])

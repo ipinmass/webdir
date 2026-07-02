@@ -61,6 +61,10 @@
         .rename-form { display: inline-flex; gap: 4px; margin-left: 8px; }
         .rename-form input { padding: 2px 6px; border: 1px solid #4a90d9; border-radius: 3px; font-size: 13px; width: 180px; }
         .rename-form button { padding: 2px 8px; font-size: 12px; }
+        .btn-cache { background: #f0ad4e; color: white; border-color: #f0ad4e; }
+        .btn-cache:hover { background: #ec971f; }
+        .btn-cache.cached { background: #27ae60; border-color: #27ae60; }
+        .btn-cache.cached:hover { background: #219a52; }
     </style>
 </head>
 <body>
@@ -112,6 +116,7 @@
                         <div id="name-{{ loop.index }}">
                             {% if item.is_dir %}
                                 <a class="file-name dir" href="{{ url_for('index', path=item.path) }}">{{ item.name }}</a>
+                                <button class="btn btn-sm btn-cache" onclick="cacheDir(this, '{{ item.path }}')" title="Cache all files">&#9881;</button>
                             {% else %}
                                 {% if item.is_image %}
                                     <a class="file-name" href="#" onclick="showPreview('{{ url_for('view', filepath=item.path) }}'); return false;">{{ item.name }}</a>
@@ -259,6 +264,57 @@
                 }
             }
         });
+
+        async function cacheDir(btn, dirPath) {
+            if (btn.classList.contains('cached') || btn.disabled) return;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const resp = await fetch('/api/files?path=' + encodeURIComponent(dirPath));
+                if (!resp.ok) throw new Error('Failed to fetch file list');
+                const files = await resp.json();
+                if (files.length === 0) {
+                    btn.textContent = '\u2713';
+                    btn.classList.add('cached');
+                    btn.disabled = false;
+                    return;
+                }
+                const cache = await caches.open('webdir-cache');
+                let done = 0;
+                for (const file of files) {
+                    try {
+                        const url = '/view/' + file;
+                        await cache.add(url);
+                    } catch {}
+                    done++;
+                    btn.textContent = done + '/' + files.length;
+                }
+                btn.textContent = '\u2713';
+                btn.classList.add('cached');
+            } catch (e) {
+                btn.textContent = 'Cache';
+                showToast('Cache failed');
+            }
+            btn.disabled = false;
+        }
+
+        (async () => {
+            const cache = await caches.open('webdir-cache');
+            const reqs = await cache.keys();
+            const cachedUrls = new Set(reqs.map(r => r.url));
+            document.querySelectorAll('.btn-cache').forEach(btn => {
+                const dirPath = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
+                fetch('/api/files?path=' + encodeURIComponent(dirPath))
+                    .then(r => r.ok ? r.json() : [])
+                    .then(files => {
+                        if (files.length > 0 && files.every(f => cachedUrls.has(location.origin + '/view/' + f))) {
+                            btn.textContent = '\u2713';
+                            btn.classList.add('cached');
+                        }
+                    })
+                    .catch(() => {});
+            });
+        })();
     </script>
 </body>
 </html>
